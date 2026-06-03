@@ -21,6 +21,99 @@ class AIServiceError extends Error {
 
 const SYSTEM_PROMPT = `You are an expert educator and exam paper generator. You must return only valid JSON with no markdown formatting, no code blocks, no explanation text. The JSON must exactly match the schema provided.`;
 
+const MAX_REFERENCE_CHARS = 12000;
+const MIN_PARAGRAPH_CHARS = 80;
+
+function normalizeReferenceText(text: string): string {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function buildReferenceKeywords(input: AssignmentInput): string[] {
+  const source = [
+    input.title,
+    input.subject,
+    input.grade,
+    input.additionalInstructions || '',
+    input.questionConfigs.map((config) => config.type.replace('_', ' ')).join(' '),
+  ].join(' ');
+
+  return Array.from(
+    new Set(
+      source
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter((word) => word.length > 3),
+    ),
+  );
+}
+
+function scoreParagraph(paragraph: string, keywords: string[]): number {
+  const lower = paragraph.toLowerCase();
+  let score = Math.min(paragraph.length / 1000, 2);
+
+  for (const keyword of keywords) {
+    if (lower.includes(keyword)) {
+      score += 2;
+    }
+  }
+
+  if (/definition|example|formula|diagram|process|chapter|topic|exercise/i.test(paragraph)) {
+    score += 1.5;
+  }
+
+  return score;
+}
+
+function prepareReferenceMaterial(input: AssignmentInput): string | undefined {
+  if (!input.uploadedFileContent) {
+    return undefined;
+  }
+
+  const normalized = normalizeReferenceText(input.uploadedFileContent);
+  if (normalized.length <= MAX_REFERENCE_CHARS) {
+    return normalized;
+  }
+
+  const keywords = buildReferenceKeywords(input);
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length >= MIN_PARAGRAPH_CHARS);
+
+  const rankedParagraphs = paragraphs
+    .map((paragraph, index) => ({
+      index,
+      paragraph,
+      score: scoreParagraph(paragraph, keywords),
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  const selected: Array<{ index: number; paragraph: string }> = [];
+  let totalChars = 0;
+
+  for (const item of rankedParagraphs) {
+    if (totalChars + item.paragraph.length > MAX_REFERENCE_CHARS) {
+      continue;
+    }
+    selected.push({ index: item.index, paragraph: item.paragraph });
+    totalChars += item.paragraph.length;
+  }
+
+  if (selected.length === 0) {
+    return normalized.slice(0, MAX_REFERENCE_CHARS);
+  }
+
+  return selected
+    .sort((a, b) => a.index - b.index)
+    .map((item) => item.paragraph)
+    .join('\n\n');
+}
+
 function buildUserPrompt(
   input: AssignmentInput,
   assignmentId: string,
@@ -62,8 +155,9 @@ Every question must have an answerKey.`;
     prompt += `\n\nAdditional Instructions:\n${input.additionalInstructions}`;
   }
 
-  if (input.uploadedFileContent) {
-    prompt += `\n\nReference Material:\n${input.uploadedFileContent}`;
+  const referenceMaterial = prepareReferenceMaterial(input);
+  if (referenceMaterial) {
+    prompt += `\n\nReference Material (preprocessed OCR/text extraction, trimmed to the most relevant ${MAX_REFERENCE_CHARS} characters):\n${referenceMaterial}`;
   }
 
   prompt += `\n\nReturn the result as a JSON object with this exact structure:
