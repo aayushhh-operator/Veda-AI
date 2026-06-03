@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+apps/backend/.env
+apps/frontend/.env.local
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Logs & debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+
+# Next.js
+next-env.d.ts
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# Docker (local data only; keep docker-compose.yml tracked)
+mongo_data/
+
+# Puppeteer / Chromium cache
+.cache/puppeteer/
+
+# Misc
+*.pem
+.turbo/
