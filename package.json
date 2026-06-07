@@ -10,7 +10,7 @@
     "dev": "concurrently --names \"backend,frontend\" --prefix-colors \"blue,green\" \"npm run dev -w apps/backend\" \"npm run dev -w apps/frontend\"",
     "dev:backend": "npm run dev -w apps/backend",
     "dev:frontend": "npm run dev -w apps/frontend",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @vedaai/shared && npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
