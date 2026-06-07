@@ -1,36 +1,42 @@
 services:
-  # Next.js Frontend
+  # ─── Next.js Frontend ────────────────────────────────────────────────────────
   - type: web
     name: vedaai-frontend
     env: node
     region: oregon
-    buildCommand: npm install && npm run build -w @vedaai/shared && npm run build -w apps/frontend
-    startCommand: npm run start -w apps/frontend
+    rootDir: apps/frontend
+    buildCommand: cd ../.. && npm install && npm run build -w @vedaai/shared && cd apps/frontend && npm run build
+    startCommand: npm run start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "3000"
+      # Set this to your backend's Render URL after first deploy
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: vedaai-backend
-          envVarKey: RENDER_EXTERNAL_URL
+        sync: false
+      - key: NEXT_PUBLIC_WS_URL
+        sync: false
 
-  # Express.js Backend
+  # ─── Express.js Backend ───────────────────────────────────────────────────────
   - type: web
     name: vedaai-backend
     env: node
     region: oregon
-    buildCommand: npm install && npm run build -w @vedaai/shared && npm run build -w apps/backend
-    startCommand: npm run start -w apps/backend
+    rootDir: apps/backend
+    buildCommand: cd ../.. && npm install && npm run build -w @vedaai/shared && npm run build -w apps/backend
+    startCommand: node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: "10000"
       - key: CORS_ORIGINS
-        value: "*"
-      # Fill these out in the Render Dashboard -> Environment after deploying:
+        sync: false
+      # Set these in the Render Dashboard -> Environment tab:
       - key: MONGODB_URI
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      - key: GROQ_MODEL
+        value: "llama-3.3-70b-versatile"
