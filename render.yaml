@@ -4,7 +4,7 @@ services:
     name: vedaai-frontend
     env: node
     region: oregon
-    buildCommand: npm install && npm run build -w apps/frontend
+    buildCommand: npm install && npm run build -w @vedaai/shared && npm run build -w apps/frontend
     startCommand: npm run start -w apps/frontend
     envVars:
       - key: NODE_ENV
@@ -20,7 +20,7 @@ services:
     name: vedaai-backend
     env: node
     region: oregon
-    buildCommand: npm install && npm run build -w apps/backend
+    buildCommand: npm install && npm run build -w @vedaai/shared && npm run build -w apps/backend
     startCommand: npm run start -w apps/backend
     envVars:
       - key: NODE_ENV
@@ -29,8 +29,8 @@ services:
         value: "10000"
       - key: CORS_ORIGINS
         value: "*"
-      # Ensure you fill these out in the Render Dashboard after deploying:
-      - key: MONGO_URI
+      # Fill these out in the Render Dashboard -> Environment after deploying:
+      - key: MONGODB_URI
         sync: false
       - key: GROQ_API_KEY
         sync: false
