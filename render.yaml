@@ -1,0 +1,36 @@
+services:
+  # Next.js Frontend
+  - type: web
+    name: vedaai-frontend
+    env: node
+    region: oregon
+    buildCommand: npm install && npm run build -w apps/frontend
+    startCommand: npm run start -w apps/frontend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: vedaai-backend
+          envVarKey: RENDER_EXTERNAL_URL
+
+  # Express.js Backend
+  - type: web
+    name: vedaai-backend
+    env: node
+    region: oregon
+    buildCommand: npm install && npm run build -w apps/backend
+    startCommand: npm run start -w apps/backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: CORS_ORIGINS
+        value: "*"
+      # Ensure you fill these out in the Render Dashboard after deploying:
+      - key: MONGO_URI
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
